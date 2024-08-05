@@ -1,0 +1,1 @@
+export const INSUMO_SERVICE = 'INSUMO_SERVICE';
