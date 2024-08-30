@@ -6,6 +6,8 @@ interface EnvVars {
     PORT: number;
     INSUMOS_MICROSERVICES_HOST: string;
     INSUMOS_MICROSERVICES_PORT: number;
+    PRESUPUESTO_MICROSERVICES_HOST: string;
+    PRESUPUESTO_MICROSERVICES_PORT: number;
 }
 
 const envsSchema = joi.object({
@@ -27,5 +29,7 @@ const EnvVars: EnvVars = value;
 export const envs = {
     port: EnvVars.PORT,
     insumosMicroserviceHost: EnvVars.INSUMOS_MICROSERVICES_HOST,
-    insumoMicroservicePort: EnvVars.INSUMOS_MICROSERVICES_PORT
+    insumoMicroservicePort: EnvVars.INSUMOS_MICROSERVICES_PORT,
+    presupustoMicroserviceHost: EnvVars.PRESUPUESTO_MICROSERVICES_HOST,
+    presupuestoMicroservicePort: EnvVars.PRESUPUESTO_MICROSERVICES_PORT
 }

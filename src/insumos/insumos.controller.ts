@@ -1,9 +1,9 @@
-import { BadRequestException, Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { INSUMO_SERVICE } from 'src/config';
 import { CreateInsumoDto } from './dto/create-insumo.dto';
-import { catchError, firstValueFrom } from 'rxjs';
+import { catchError } from 'rxjs';
 import { UpdateInsumoDto } from './dto/update-insumo.dto';
 
 @Controller('insumos')
