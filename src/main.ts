@@ -3,13 +3,16 @@ import { AppModule } from './app.module';
 import {envs} from './config';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { RpcCustomExceptionFilter } from './common';
+import * as cors from 'cors';
 
 async function bootstrap() {
 
   const logger = new Logger('Main-Gateway');
 
+
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors();
   //todas nuestras endpoint comienzan con api en la url
 
   app.setGlobalPrefix('api');
