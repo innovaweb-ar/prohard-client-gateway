@@ -1,23 +1,14 @@
 import { Logger, Module } from '@nestjs/common';
 import { InsumosController } from './insumos.controller';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import {envs, INSUMO_SERVICE} from 'src/config';
+import {envs} from 'src/config';
 import { env } from 'process';
+import { MicroservicesModule } from 'src/microservices.module';
 
 @Module({
   controllers: [InsumosController],
   providers: [],
   imports:[
-    ClientsModule.register([
-      {
-        name: INSUMO_SERVICE, 
-        transport: Transport.TCP,
-        options: {
-          host: envs.insumosMicroserviceHost,
-          port: envs.insumoMicroservicePort
-        }
-      }
-    ])
+   MicroservicesModule
   ]
 })
 export class InsumosModule {
