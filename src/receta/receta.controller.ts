@@ -48,11 +48,11 @@ export class RecetaController {
     return this.recetaService.send({ cmd: 'findAllReceta' }, {});
   }
 
-  /*
+  
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.recetaService.findOne(+id);
-  }*/
+  findOne(@Param('id') id: number) {
+    return this.recetaService.send({cmd: 'findOneReceta'},{id});
+  }
 
   @Patch(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateRecetaDto: UpdateRecetaDto) {

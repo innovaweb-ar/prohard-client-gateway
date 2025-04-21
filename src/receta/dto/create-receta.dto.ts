@@ -27,6 +27,7 @@ export class CreateRecetaDto {
   tipo: string;
 
   @IsString()
+  @IsOptional()
   imagenUrl: string;
 
   @IsArray()

@@ -1,19 +1,68 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsInt, IsString, Min } from 'class-validator';
+import { IsDate, IsInt, IsOptional, IsString, IsNotEmpty } from 'class-validator';
 
+export class PedidoClienteDto {
+    @IsString()
+    @IsNotEmpty()
+    numero: string;
+  
+    @IsInt()
+    clienteId: number;
+  
+    @IsOptional()
+    @Type(() => Date)
+    @IsDate()
+    fecha?: Date;
+  
+    @IsOptional()
+    @IsInt()
+    contactoId?: number;
+  
+    @IsOptional()
+    @IsString()
+    adjunto?: string;
+  }
 
 export class CreateOrdenFabricacionDto {
-    @IsInt()
-    productoFabricadoId: number;
-  
-    @IsInt()
-    @Min(1)
-    cantidad: number;
-  
-    @IsString()
-    observaciones?: string;
+  @IsString()
+  @IsNotEmpty()
+  codigo: string;
 
-    @IsDate()
-    @Type(() => Date) // Convierte la cadena a una instancia de Date automáticamente
-    fechaEntrega: Date;
+  @IsInt()
+  productoFabricadoId: number;
+
+  @IsInt()
+  cantidad: number;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  fechaEntrega?: Date;
+
+  @IsOptional()
+  @IsString()
+  observaciones?: string;
+
+  @IsOptional()
+  @IsInt()
+  nroPresupuesto?: number;
+
+  @IsOptional()
+  @IsString()
+  prioridad?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  yacimiento: string;
+
+  @IsOptional()
+  snapshotSkid?: any; // Si deseas validar el JSON, puedes crear un DTO anidado, pero por ahora lo dejamos como any
+
+  // Datos del Pedido del Cliente (opcional)
+  @IsOptional()
+  pedidoCliente?: PedidoClienteDto;
+
+  @IsOptional()
+  @IsString()
+  estado: string;
 }

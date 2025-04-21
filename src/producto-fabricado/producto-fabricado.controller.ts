@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, ParseIntPipe, UseInterceptors, UploadedFile, UsePipes } from '@nestjs/common';
-import { CreateProductoFabricadoDto } from './dto/create-producto-fabricado.dto';
+import { CreateProductoFabricadoDto, TipoProductoFabricado } from './dto/create-producto-fabricado.dto';
 import { UpdateProductoFabricadoDto } from './dto/update-producto-fabricado.dto';
 import { INSUMO_SERVICE } from 'src/config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
@@ -50,8 +50,6 @@ export class ProductoFabricadoController {
 
   @Get()
   findAll() {
-
-
     return this.productoFabricadoClient.send({ cmd: 'findAllProductoFabricado' }, {})
       .pipe(
         map((productos) => {
@@ -88,6 +86,16 @@ export class ProductoFabricadoController {
         })
       )
       .pipe(
+        catchError(err => { throw new RpcException(err) })
+      )
+  }
+
+  @Get('tipo/:tipo')
+  async findByTipo(@Param('tipo') tipo: TipoProductoFabricado) {
+    console.log(tipo);
+    return this.productoFabricadoClient.send({ cmd: 'findAllByTipo' }, tipo)
+      .pipe(
+        
         catchError(err => { throw new RpcException(err) })
       )
   }
