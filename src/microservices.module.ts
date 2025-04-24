@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { envs, INSUMO_SERVICE } from 'src/config';
+import { AUTH_SERVICE, envs, INSUMO_SERVICE } from 'src/config';
 
 @Module({
   imports: [
@@ -14,6 +14,14 @@ import { envs, INSUMO_SERVICE } from 'src/config';
           port: envs.insumoMicroservicePort, // Mismo puerto actual
         },
       },
+      {
+        name: AUTH_SERVICE,
+        transport: Transport.TCP,
+        options: {
+          host: envs.authMicroserviceHost, // Host del microservicio de autenticación
+          port: envs.authMicroservicePort, // Puerto del microservicio de autenticación
+        },
+      }
     ]),
   ],
   exports: [ClientsModule], // Exporta ClientsModule para que otros módulos lo usen

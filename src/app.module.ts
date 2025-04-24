@@ -9,10 +9,11 @@ import { ProveedorModule } from './proveedor/proveedor.module';
 import { ContactoModule } from './contacto/contacto.module';
 import { RecetaModule } from './receta/receta.module';
 import { ProductoFabricadoModule } from './producto-fabricado/producto-fabricado.module';
+import { AuthModule } from './auth/auth.module';
 
 
 @Module({
-  imports: [InsumosModule, PresupuestoModule, DepositosModule, ProductoFabricadoModule, OrdenFabricacionModule, MovimientoModule, ClienteModule, ProveedorModule, ContactoModule, RecetaModule],
+  imports: [InsumosModule, PresupuestoModule, DepositosModule, ProductoFabricadoModule, OrdenFabricacionModule, MovimientoModule, ClienteModule, ProveedorModule, ContactoModule, RecetaModule, AuthModule],
   controllers: [],
   providers: [],
 })

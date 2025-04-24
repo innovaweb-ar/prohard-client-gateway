@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { INSUMO_SERVICE } from 'src/config';
@@ -8,6 +8,7 @@ import { UpdateInsumoDto } from './dto/update-insumo.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path'
+import { AuthGuard } from 'src/auth/guards/auth.guard';
 
 
 @Controller('insumos')
@@ -65,6 +66,7 @@ export class InsumosController {
     return this.insumosClient.send({ cmd: 'create_insumo' }, createInsumoDto);
   }
 
+  //@UseGuards(AuthGuard)
   @Get()
   findAllInsumos(@Query() paginationDto: PaginationDto) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
@@ -89,6 +91,12 @@ export class InsumosController {
         catchError(err => { throw new RpcException(err); })
       );
   }
+
+  @Get('notfilters')
+  findAllNotFilters(){
+    return this.insumosClient.send({ cmd: 'find_all_insumos_not_filters' },{})
+  }
+
 
   @Get(':id')
   async findOneInsumo(@Param('id', ParseIntPipe) id: number) {

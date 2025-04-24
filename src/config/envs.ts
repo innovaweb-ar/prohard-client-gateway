@@ -8,12 +8,16 @@ interface EnvVars {
     INSUMOS_MICROSERVICES_PORT: number;
     PRESUPUESTO_MICROSERVICES_HOST: string;
     PRESUPUESTO_MICROSERVICES_PORT: number;
+    AUTH_MICROSERVICES_HOST: string;
+    AUTH_MICROSERVICES_PORT: number;
 }
 
 const envsSchema = joi.object({
     PORT: joi.number().required(),
     INSUMOS_MICROSERVICES_HOST: joi.string().required(),
-    INSUMOS_MICROSERVICES_PORT: joi.number().required()
+    INSUMOS_MICROSERVICES_PORT: joi.number().required(),
+    AUTH_MICROSERVICES_HOST: joi.string().required(),
+    AUTH_MICROSERVICES_PORT: joi.number().required(),
 })
     .unknown(true);
 
@@ -31,5 +35,7 @@ export const envs = {
     insumosMicroserviceHost: EnvVars.INSUMOS_MICROSERVICES_HOST,
     insumoMicroservicePort: EnvVars.INSUMOS_MICROSERVICES_PORT,
     presupustoMicroserviceHost: EnvVars.PRESUPUESTO_MICROSERVICES_HOST,
-    presupuestoMicroservicePort: EnvVars.PRESUPUESTO_MICROSERVICES_PORT
+    presupuestoMicroservicePort: EnvVars.PRESUPUESTO_MICROSERVICES_PORT,
+    authMicroserviceHost: EnvVars.AUTH_MICROSERVICES_HOST,
+    authMicroservicePort: EnvVars.AUTH_MICROSERVICES_PORT
 }

@@ -1,11 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, ParseIntPipe, HttpException, HttpStatus, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, ParseIntPipe, HttpException, HttpStatus, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { CreateRecetaDto } from './dto/create-receta.dto';
 import { UpdateRecetaDto } from './dto/update-receta.dto';
 import { INSUMO_SERVICE } from 'src/config';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
+import { catchError, map } from 'rxjs';
 
 @Controller('receta')
 export class RecetaController {
@@ -15,8 +16,9 @@ export class RecetaController {
 
 
   @Post()
-  @UseInterceptors(FileInterceptor('imagenFile', {
+  @UseInterceptors(FileInterceptor('imagen', {
     storage: diskStorage({
+      destination: './uploads',
       filename: (req, file, callback) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const fileExtName = extname(file.originalname);
@@ -30,9 +32,18 @@ export class RecetaController {
   ) {
     // Si se sube una imagen, asigna su nombre (o path) a imagenUrl.
     if (file) {
-      createRecetaDto.imagenUrl = file.filename; // O file.path según prefieras.
+      createRecetaDto.imagen = file.filename; // O file.path según prefieras.
     } else {
-      createRecetaDto.imagenUrl = '';
+      createRecetaDto.imagen = '';
+    }
+
+    // ✅ Transforma componentes si viene como string
+    if (typeof createRecetaDto.componentes === 'string') {
+      try {
+        createRecetaDto.componentes = JSON.parse(createRecetaDto.componentes);
+      } catch (err) {
+        throw new BadRequestException('Formato inválido en componentes');
+      }
     }
 
     return this.recetaService.send({ cmd: 'createReceta' }, createRecetaDto);
@@ -45,13 +56,32 @@ export class RecetaController {
 
   @Get()
   findAll() {
-    return this.recetaService.send({ cmd: 'findAllReceta' }, {});
+    return this.recetaService.send({ cmd: 'findAllReceta' }, {})
+      .pipe(
+        map((response) => {
+          const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  
+          // Verificamos que `response.data` sea un array
+          if (Array.isArray(response.data)) {
+            response.data.forEach(producto => {
+              if (producto.imagen) {
+                producto.imagen = `${baseUrl}/uploads/${producto.imagen}`;
+              } else {
+                producto.imagen = `${baseUrl}/uploads/not-image.jpg`;
+              }
+            });
+          }
+  
+          return response;
+        }),
+        catchError(err => { throw new RpcException(err); })
+      );
   }
 
-  
+
   @Get(':id')
   findOne(@Param('id') id: number) {
-    return this.recetaService.send({cmd: 'findOneReceta'},{id});
+    return this.recetaService.send({ cmd: 'findOneReceta' }, { id });
   }
 
   @Patch(':id')
