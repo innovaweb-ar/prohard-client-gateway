@@ -1,5 +1,6 @@
 export interface CurrenteUser {
-    id: number;
-    email: string;
-    roleId:number
+ id: number,
+    email: string,
+    role: string
+    scopes: string[]
 }

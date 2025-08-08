@@ -10,11 +10,35 @@ import { ContactoModule } from './contacto/contacto.module';
 import { RecetaModule } from './receta/receta.module';
 import { ProductoFabricadoModule } from './producto-fabricado/producto-fabricado.module';
 import { AuthModule } from './auth/auth.module';
+import { RolesModule } from './roles/roles.module';
+import { PermissionModule } from './permission/permission.module';
+import { UserModule } from './user/user.module';
+import { YacimientoModule } from './yacimiento/yacimiento.module';
+import { MenuModule } from './menu/menu.module';
 
 
 @Module({
-  imports: [InsumosModule, PresupuestoModule, DepositosModule, ProductoFabricadoModule, OrdenFabricacionModule, MovimientoModule, ClienteModule, ProveedorModule, ContactoModule, RecetaModule, AuthModule],
+  imports: [InsumosModule,
+    RolesModule,
+    PermissionModule,
+    PresupuestoModule,
+    UserModule,
+    DepositosModule,
+    ProductoFabricadoModule,
+    OrdenFabricacionModule,
+    MovimientoModule,
+    ClienteModule,
+    ProveedorModule,
+    ContactoModule,
+    RecetaModule,
+    AuthModule,
+    RolesModule,
+    PermissionModule,
+    UserModule,
+    YacimientoModule,
+    MenuModule
+  ],
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

@@ -1,8 +1,12 @@
 import { Type } from "class-transformer";
-import { IsArray, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { CreateContactoDto } from "src/contacto/dto/create-contacto.dto";
 
 export class CreateClienteDto {
+
+  @IsNumber()
+  @IsOptional()
+  public id?: number;
 
   @IsString()
   public nombre: string;

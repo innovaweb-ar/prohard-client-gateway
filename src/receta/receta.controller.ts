@@ -1,52 +1,71 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, ParseIntPipe, HttpException, HttpStatus, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, ParseIntPipe, HttpException, HttpStatus, UseInterceptors, UploadedFile, BadRequestException, UploadedFiles } from '@nestjs/common';
 import { CreateRecetaDto } from './dto/create-receta.dto';
 import { UpdateRecetaDto } from './dto/update-receta.dto';
-import { INSUMO_SERVICE } from 'src/config';
+import { envs, INSUMO_SERVICE, STORAGE_SERVICE } from 'src/config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { diskStorage } from 'multer';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage, memoryStorage } from 'multer';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
-import { catchError, map } from 'rxjs';
+import { catchError, firstValueFrom, map } from 'rxjs';
+import { MultipartJsonInterceptor } from 'src/common/interceptors/multipart-json.interceptor';
+import { ParseComponentesInterceptor } from 'src/common/interceptors/parse-component-json.interceptor';
 
 @Controller('receta')
 export class RecetaController {
   constructor(
-    @Inject(INSUMO_SERVICE) private readonly recetaService: ClientProxy
+    @Inject(INSUMO_SERVICE) private readonly recetaService: ClientProxy,
+    @Inject(STORAGE_SERVICE) private readonly storageService: ClientProxy
   ) { }
 
 
   @Post()
-  @UseInterceptors(FileInterceptor('imagen', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const fileExtName = extname(file.originalname);
-        callback(null, `image-${uniqueSuffix}${fileExtName}`)
-      }
-    })
-  }))
+  @UseInterceptors(FileFieldsInterceptor(
+    [{ name: 'imagen', maxCount: 1 }], { storage: memoryStorage() }
+  ),
+    ParseComponentesInterceptor
+  )
   async uploadReceta(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: { imagen?: Express.Multer.File[] },
     @Body() createRecetaDto: any
   ) {
-    // Si se sube una imagen, asigna su nombre (o path) a imagenUrl.
-    if (file) {
-      createRecetaDto.imagen = file.filename; // O file.path según prefieras.
-    } else {
-      createRecetaDto.imagen = '';
+    const receta = await firstValueFrom(
+      this.recetaService.send<{ id: number }>({ cmd: 'createReceta' }, createRecetaDto)
+    );
+
+    // 2️⃣ Si hay archivo, lo subimos al Storage Service
+    if (files.imagen?.length) {
+      const file = files.imagen[0];
+      const upload = await firstValueFrom(
+        this.storageService.send(
+          { cmd: 'storage.upload' },
+          {
+            file: {
+              buffer: file.buffer.toString('base64'),
+              originalname: file.originalname,
+              mimetype: file.mimetype,
+              size: file.size
+            },
+            metadata: {
+              module: 'receta',
+              entityId: receta.id,
+              uploadedBy: receta.id,
+              description: 'Imagen de receta'
+            }
+          }
+        )
+      );
+
+      // ✅ Transforma componentes si viene como string
+      await firstValueFrom(
+        this.recetaService.send({ cmd: 'updateReceta' }, {
+          id: receta.id,
+          imagen: upload.url
+        } as UpdateRecetaDto)
+      );
     }
 
-    // ✅ Transforma componentes si viene como string
-    if (typeof createRecetaDto.componentes === 'string') {
-      try {
-        createRecetaDto.componentes = JSON.parse(createRecetaDto.componentes);
-      } catch (err) {
-        throw new BadRequestException('Formato inválido en componentes');
-      }
-    }
+    return receta;
 
-    return this.recetaService.send({ cmd: 'createReceta' }, createRecetaDto);
   }
 
   @Get('tipo/:tipo')
@@ -55,51 +74,91 @@ export class RecetaController {
   }
 
   @Get()
-  findAll() {
-    return this.recetaService.send({ cmd: 'findAllReceta' }, {})
-      .pipe(
-        map((response) => {
-          const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-  
-          // Verificamos que `response.data` sea un array
-          if (Array.isArray(response.data)) {
-            response.data.forEach(producto => {
-              if (producto.imagen) {
-                producto.imagen = `${baseUrl}/uploads/${producto.imagen}`;
-              } else {
-                producto.imagen = `${baseUrl}/uploads/not-image.jpg`;
-              }
-            });
-          }
-  
-          return response;
-        }),
-        catchError(err => { throw new RpcException(err); })
-      );
+  async findAll() {
+    // 1) Llamas al microservicio y obtienes { data: Receta[] }
+    const { data } = await firstValueFrom(
+      this.recetaService.send({ cmd: 'findAllReceta' }, {})
+    );
+
+    const base = this.getBaseImageUrl();
+
+    // 2) Mapeas cada receta para añadir imagenUrl
+    return data.map(r => {
+      const path = r.imagen; // aquí almacenas solo el 'path' en la BD
+      return {
+        ...r,
+        imagen: path
+          ? `${base}${path}`
+          : `${base}/not-image.jpg`
+      };
+    });
   }
 
+  private getBaseImageUrl() {
+    return `http://${envs.storageMicroserviceHost}:${envs.portStorageHttp}`;
+  }
 
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.recetaService.send({ cmd: 'findOneReceta' }, { id });
   }
-
   @Patch(':id')
-  async update(@Param('id', ParseIntPipe) id: number, @Body() updateRecetaDto: UpdateRecetaDto) {
-    try {
-      console.log('Datos enviados al microservicio:', updateRecetaDto);
-      const response = await this.recetaService.send({ cmd: 'updateReceta' }, { id, ...updateRecetaDto }).toPromise();
-      return response;
-    } catch (error) {
-      console.error('Error al enviar la receta al microservicio:', error?.response?.data || error.message);
-      throw new HttpException(error?.response?.data || 'Error en la validación de la receta', HttpStatus.BAD_REQUEST);
+  @UseInterceptors(
+    // ① Usamos FileInterceptor porque solo hay un campo 'imagen'
+    FileInterceptor('imagen', { storage: memoryStorage() }),
+    ParseComponentesInterceptor
+  )
+  async updateReceta(
+    @Param('id', ParseIntPipe) id: number,
+    // ② @UploadedFile() en singular
+    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: any
+  ) {
+    // 1️⃣ Si vino un archivo, súbelo
+    if (file) {
+      console.log("Actualiza la imagen")
+      const upload = await firstValueFrom(
+        this.storageService.send(
+          { cmd: 'storage.upload' },
+          {
+            file: {
+              buffer: file.buffer.toString('base64'),
+              originalname: file.originalname,
+              mimetype: file.mimetype,
+              size: file.size
+            },
+            metadata: {
+              module: 'receta',
+              entityId: id,
+              uploadedBy: id,
+              description: 'Imagen actualizada'
+            }
+          }
+        )
+      );
+      // 2️⃣ Asigna el path devuelto (upload.path) al DTO
+      dto.imagen = upload.url;
     }
+
+    // 3️⃣ Llamada al microservicio
+    const updated = await firstValueFrom(
+      this.recetaService.send({ cmd: 'updateReceta' }, { id, ...dto })
+    );
+
+    // 4️⃣ Construye la URL para la respuesta
+    const base = `http://${envs.storageMicroserviceHost}:${envs.portStorageHttp}/uploads`;
+    const path = (updated as any).imagen;
+    (updated as any).imagenUrl = path
+      ? `${base}/${path}`
+      : `${base}/not-image.jpg`;
+
+    return updated;
   }
-  /*
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-      return this.recetaService.remove(+id);
-    }
-  
-    */
+
+  /*@Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.recetaService.remove(+id);
+  }
+*/
+
 }

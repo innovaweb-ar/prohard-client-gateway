@@ -31,6 +31,8 @@ export class ClienteController {
         @Param('id', ParseIntPipe) id: number,
         @Body() updateClienteDto: UpdateClienteDto) {
 
+
+        console.log("Actualizando cliente");
         return this.clienteClient.send({ cmd: 'update_cliente' }, { id, ...updateClienteDto })
             .pipe(
                 catchError(err => { throw new RpcException(err) })

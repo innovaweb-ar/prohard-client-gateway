@@ -9,6 +9,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path'
 import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { BuscarInsumosDto } from './dto/buscar-insumos.dto';
 
 
 @Controller('insumos')
@@ -93,10 +94,16 @@ export class InsumosController {
   }
 
   @Get('notfilters')
-  findAllNotFilters(){
-    return this.insumosClient.send({ cmd: 'find_all_insumos_not_filters' },{})
+  findAllNotFilters() {
+    return this.insumosClient.send({ cmd: 'find_all_insumos_not_filters' }, {})
   }
 
+  @Get('buscar')
+  findInsumos(@Query() params: BuscarInsumosDto) {
+
+    return this.insumosClient.send({ cmd: 'find_insumos' }, params);
+
+  }
 
   @Get(':id')
   async findOneInsumo(@Param('id', ParseIntPipe) id: number) {
@@ -132,6 +139,8 @@ export class InsumosController {
       }
     })
   }))
+
+
   updateInsumo(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file: Express.Multer.File,
@@ -141,12 +150,12 @@ export class InsumosController {
     if (file) {
       updateInsumoDto.imagenUrl = file.filename;
     }
-    
+
     // Conversión de tipos:
     updateInsumoDto.minimunStock = Number(updateInsumoDto.minimunStock);
     updateInsumoDto.available = updateInsumoDto.available === 'true';
     updateInsumoDto.isInventoriable = updateInsumoDto.isInventoriable === 'true';
-  
+
     // Parsear proveedores si viene como string
     if (typeof updateInsumoDto.proveedores === 'string') {
       try {
@@ -155,13 +164,14 @@ export class InsumosController {
         updateInsumoDto.proveedores = [];
       }
     }
-  
+
     return this.insumosClient.send({ cmd: 'update_insumo' }, { id, ...updateInsumoDto })
       .pipe(
         catchError(err => { throw new RpcException(err) })
       );
   }
-  
+
+
 
   @Delete(':id')
   deleteInsumo(@Param('id', ParseIntPipe) id: number) {
