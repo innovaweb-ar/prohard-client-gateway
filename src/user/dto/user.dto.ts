@@ -9,7 +9,7 @@ export class Profile {
     @IsString() @IsOptional() avatarUrl?: string
 }
 
-export class User {
+export class UserDto {
     @IsEmail()
     @IsNotEmpty()
     email: string;

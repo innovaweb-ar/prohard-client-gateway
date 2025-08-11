@@ -105,6 +105,11 @@ export class InsumosController {
 
   }
 
+  @Get('categoria')
+  getCategoriaInsumo(){
+    return this.insumosClient.send({cmd:'find_categoria_insumo'}, {})
+  }
+
   @Get(':id')
   async findOneInsumo(@Param('id', ParseIntPipe) id: number) {
 
@@ -180,5 +185,6 @@ export class InsumosController {
         catchError(err => { throw new RpcException(err) })
       )
   }
+
 
 }

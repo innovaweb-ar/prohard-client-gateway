@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, ParseIntPipe, Patch, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, ParseIntPipe, Patch, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { AUTH_SERVICE, envs, STORAGE_SERVICE } from 'src/config';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -7,7 +7,10 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { MultipartJsonInterceptor } from 'src/common/interceptors/multipart-json.interceptor';
 import { firstValueFrom } from 'rxjs';
 import { memoryStorage } from 'multer';
-import { User } from './dto/user.dto';
+import { UserDto } from './dto/user.dto';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { CurrenteUser } from 'src/auth/interfaces/current-user.interface';
+import { User } from 'src/auth/decorators';
 
 @Controller('user')
 export class UserController {
@@ -59,7 +62,7 @@ export class UserController {
   @Get()
   async findAllUser() {
     const users = await firstValueFrom(
-      this.authService.send<User[]>('findAllUser', {})
+      this.authService.send<UserDto[]>('findAllUser', {})
     );
 
 
@@ -71,14 +74,28 @@ export class UserController {
     });
   }
 
+  @UseGuards(AuthGuard)
+  @Get('me')
+  async me(@User() user: CurrenteUser) {
+    const data = await firstValueFrom(
+      this.authService.send('auth.getMe', { userId: user.id })
+    );
+
+    if(data){
+      data.avatarUrl = `http://${envs.storageMicroserviceHost}:${envs.portStorageHttp}${data.avatarUrl}`;
+      console.log(data.avatarUrl);
+    }
+    return { data };
+  }
+
 
 
   @Get(':id')
   async findOneUser(@Param('id', ParseIntPipe) id: number) {
-    const user = await firstValueFrom(this.authService.send<User>('findOneUser', id));
+    const user = await firstValueFrom(this.authService.send<UserDto>('findOneUser', id));
 
     if (user.profile.avatarUrl) {
-      user.profile.avatarUrl = `${envs.storageMicroserviceHost}:${envs.portStorageHttp}${user.profile.avatarUrl}`;
+      user.profile.avatarUrl = `http://${envs.storageMicroserviceHost}:${envs.portStorageHttp}${user.profile.avatarUrl}`;
     }
 
     return user;
